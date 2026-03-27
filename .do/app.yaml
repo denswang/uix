@@ -1,0 +1,60 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# UIX — Digital Ocean App Platform Spec
+# Phase 4 · v1.0
+#
+# Deploy:
+#   doctl apps create --spec .do/app.yaml
+#   or: connect via DO dashboard → New App → GitHub → denswang/uix → main
+#
+# Cost: ~$12/mo on Basic plan (512MB RAM, 1 vCPU)
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: uix
+
+services:
+  - name: web
+    # ── Source ───────────────────────────────────────────────────────────
+    github:
+      repo: denswang/uix
+      branch: main
+      deploy_on_push: true
+
+    # ── Build ────────────────────────────────────────────────────────────
+    build_command: npm run build
+    run_command: npm run start
+
+    # ── Environment ──────────────────────────────────────────────────────
+    environment_slug: node-js
+    instance_size_slug: apps-s-1vcpu-0.5gb   # $12/mo — upgrade when needed
+
+    # ── HTTP ─────────────────────────────────────────────────────────────
+    http_port: 3000
+    routes:
+      - path: /
+
+    # ── Health check ─────────────────────────────────────────────────────
+    health_check:
+      http_path: /
+
+    # ── Environment variables ────────────────────────────────────────────
+    # Set sensitive values via DO dashboard or `doctl` — not here.
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_AND_BUILD_TIME
+
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://uix.cx
+        scope: RUN_AND_BUILD_TIME
+
+      # Fill these in DO dashboard → App Settings → Environment Variables:
+      # NEXT_PUBLIC_SANITY_PROJECT_ID  (from sanity.io project)
+      # NEXT_PUBLIC_SANITY_DATASET     (default: production)
+
+# ── Custom domain ──────────────────────────────────────────────────────────
+# Uncomment once domain is pointed to DO App Platform:
+# domains:
+#   - domain: uix.cx
+#     type: PRIMARY
+#   - domain: www.uix.cx
+#     type: ALIAS

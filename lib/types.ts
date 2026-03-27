@@ -46,32 +46,6 @@ export interface GalleryEntry {
   publishedAt?: string;
 }
 
-/* ── Sanity Image reference (raw from GROQ) ──────────────────────────────── */
-export interface SanityImageRef {
-  asset: {
-    url: string;
-  };
-}
-
-/* ── Raw Sanity document (before transformation) ─────────────────────────── */
-export interface SanityGalleryEntry {
-  _id: string;
-  title: string;
-  description: string;
-  tags: string[];
-  affiliateUrl: string;
-  affiliatePrice?: string;
-  thumbnail: SanityImageRef;
-  blueprintNote: string;
-  source: GallerySource;
-  isPlayable: boolean;
-  embedUrl?: string;
-  embedType?: 'framer' | 'figma';
-  slug: { current: string };
-  ogImage?: SanityImageRef;
-  publishedAt?: string;
-}
-
 /* ── Page-level props ────────────────────────────────────────────────────── */
 export interface GalleryPageProps {
   params: Promise<{ slug: string }>;

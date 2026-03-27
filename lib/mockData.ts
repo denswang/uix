@@ -20,7 +20,7 @@ export const MOCK_ENTRIES: GalleryEntry[] = [
     affiliateUrl: 'https://framer.com/templates/',
     affiliatePrice: '$49',
     thumbnailUrl:
-      'https://placehold.co/640x400/111111/3D7EF5?text=SaaS+Onboarding',
+      'https://picsum.photos/seed/saas-onboarding/640/400',
     blueprintNote:
       '6-step state machine — 4-column inner grid, 80px vertical rhythm, conditional branch at step 3',
     source: 'Framer',
@@ -37,7 +37,7 @@ export const MOCK_ENTRIES: GalleryEntry[] = [
     affiliateUrl: 'https://framer.com/templates/',
     affiliatePrice: '$79',
     thumbnailUrl:
-      'https://placehold.co/640x400/111111/FFFFFF?text=Checkout+Flow',
+      'https://picsum.photos/seed/checkout-stripe/640/400',
     blueprintNote:
       '2-column split — form 60%, order summary 40%, sticky CTA pinned at viewport bottom, 16px gap between sections',
     source: 'Awwwards',
@@ -54,7 +54,7 @@ export const MOCK_ENTRIES: GalleryEntry[] = [
     affiliateUrl: 'https://framer.com/templates/',
     affiliatePrice: 'Free',
     thumbnailUrl:
-      'https://placehold.co/640x400/0A0A0A/888888?text=Analytics+Dashboard',
+      'https://picsum.photos/seed/analytics-dashboard/640/400',
     blueprintNote:
       '12-column grid, 3-tier density zones — KPI header row, trend mid section, data table floor at 8px baseline',
     source: 'UIX',

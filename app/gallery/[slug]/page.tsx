@@ -144,7 +144,6 @@ export default async function GalleryDetailPage({ params }: GalleryPageProps) {
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
               className={styles.thumbnail}
               priority
-              unoptimized={entry.thumbnailUrl.includes('placehold.co')}
             />
           </div>
         )}

@@ -109,7 +109,6 @@ export default function GalleryCard({
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
           className={styles.thumbnail}
           priority={false}
-          unoptimized={thumbnailUrl.includes('placehold.co')}
         />
 
         {/* ── Playable Badge ──────────────────────────────────────────────── */}

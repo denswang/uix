@@ -1,0 +1,301 @@
+[
+  {
+    "fields": [
+      {
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "max",
+                "constraint": 80
+              }
+            ]
+          }
+        ],
+        "description": "Gallery title — max 8 words, architectural voice. E.g. \"SaaS Onboarding — Linear Pattern\"",
+        "name": "title",
+        "type": "string"
+      },
+      {
+        "options": {
+          "source": "title",
+          "maxLength": 80
+        },
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "custom"
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ]
+          }
+        ],
+        "name": "slug",
+        "type": "slug"
+      },
+      {
+        "rows": 4,
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "max",
+                "constraint": 400
+              }
+            ]
+          }
+        ],
+        "description": "2–3 sentences in UIX voice. Structural, no marketing fluff.",
+        "name": "description",
+        "type": "text",
+        "title": "Editorial Description"
+      },
+      {
+        "options": {
+          "hotspot": true
+        },
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ]
+          }
+        ],
+        "description": "Upload to Sanity — or reference a DO Spaces CDN URL via external URL field.",
+        "name": "thumbnail",
+        "type": "image"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "Framer",
+              "value": "Framer"
+            },
+            {
+              "title": "Webflow",
+              "value": "Webflow"
+            },
+            {
+              "title": "Awwwards",
+              "value": "Awwwards"
+            },
+            {
+              "title": "Siteinspire",
+              "value": "Siteinspire"
+            },
+            {
+              "title": "Godly",
+              "value": "Godly"
+            },
+            {
+              "title": "UIX Original",
+              "value": "UIX"
+            }
+          ],
+          "layout": "radio"
+        },
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "valid",
+                "constraint": [
+                  "Framer",
+                  "Webflow",
+                  "Awwwards",
+                  "Siteinspire",
+                  "Godly",
+                  "UIX"
+                ]
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ]
+          }
+        ],
+        "name": "source",
+        "type": "string",
+        "title": "Source Platform"
+      },
+      {
+        "options": {
+          "layout": "tags"
+        },
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "min",
+                "constraint": 2
+              },
+              {
+                "flag": "max",
+                "constraint": 6
+              }
+            ]
+          }
+        ],
+        "description": "3–5 tags. E.g. SaaS, Onboarding, Dark Mode.",
+        "of": [
+          {
+            "type": "string"
+          }
+        ],
+        "name": "tags",
+        "type": "array"
+      },
+      {
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "presence",
+                "constraint": "required"
+              },
+              {
+                "flag": "max",
+                "constraint": 200
+              }
+            ]
+          }
+        ],
+        "description": "1 sentence — structural logic visible in Blueprint Mode. E.g. \"4-column inner grid, 80px vertical rhythm\"",
+        "name": "blueprintNote",
+        "type": "string",
+        "title": "Blueprint Mode Annotation"
+      },
+      {
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "uri",
+                "constraint": {
+                  "options": {
+                    "scheme": [
+                      "/^http$/",
+                      "/^https$/"
+                    ],
+                    "allowRelative": false,
+                    "relativeOnly": false,
+                    "allowCredentials": false
+                  }
+                }
+              },
+              {
+                "flag": "presence",
+                "constraint": "required"
+              }
+            ]
+          }
+        ],
+        "description": "Affiliate link or direct product URL — used for CTA button.",
+        "name": "affiliateUrl",
+        "type": "url",
+        "title": "Affiliate / CTA URL"
+      },
+      {
+        "description": "Display price for CTA. E.g. \"$49\", \"$79\", \"Free\".",
+        "name": "affiliatePrice",
+        "type": "string",
+        "title": "Price Display"
+      },
+      {
+        "initialValue": false,
+        "description": "Enable to render PlayableEmbed on the detail page.",
+        "name": "isPlayable",
+        "type": "boolean",
+        "title": "Is Playable (Interactive Flow)"
+      },
+      {
+        "validation": [
+          {
+            "level": "error",
+            "rules": [
+              {
+                "flag": "uri",
+                "constraint": {
+                  "options": {
+                    "scheme": [
+                      "/^http$/",
+                      "/^https$/"
+                    ],
+                    "allowRelative": false,
+                    "relativeOnly": false,
+                    "allowCredentials": false
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "description": "Required if Is Playable is enabled. Framer embed URL or Figma prototype link.",
+        "hidden": "conditional",
+        "name": "embedUrl",
+        "type": "url",
+        "title": "Embed URL"
+      },
+      {
+        "options": {
+          "list": [
+            {
+              "title": "Framer",
+              "value": "framer"
+            },
+            {
+              "title": "Figma",
+              "value": "figma"
+            }
+          ],
+          "layout": "radio"
+        },
+        "hidden": "conditional",
+        "name": "embedType",
+        "type": "string",
+        "title": "Embed Platform"
+      },
+      {
+        "description": "Overrides thumbnail for social sharing. Recommended 1200×630.",
+        "name": "ogImage",
+        "type": "image",
+        "title": "OG Image (optional)"
+      },
+      {
+        "name": "publishedAt",
+        "type": "datetime"
+      }
+    ],
+    "name": "galleryEntry",
+    "type": "document"
+  }
+]

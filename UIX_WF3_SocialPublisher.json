@@ -1,0 +1,257 @@
+{
+  "name": "UIX WF3 — Social Media Publisher",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Post Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [200, 300],
+      "typeVersion": 2,
+      "parameters": {
+        "path": "uix-post",
+        "httpMethod": "GET",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "uix-post-webhook"
+    },
+    {
+      "id": "node-webhook-ack",
+      "name": "Acknowledge Request",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [420, 480],
+      "typeVersion": 1.1,
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<html><body style=\"background:#0A0A0A;color:#F0F0F0;font-family:Arial;padding:40px;text-align:center;\"><h2>UIX</h2><p style=\"color:#888;\">Publishing to social media.<br>You will receive a confirmation email once both posts are live.</p></body></html>",
+        "options": { "responseCode": 200, "responseHeaders": { "entries": [{ "name": "Content-Type", "value": "text/html" }] } }
+      }
+    },
+    {
+      "id": "node-fetch-sanity",
+      "name": "Fetch Sanity Entry",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [420, 300],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "GET",
+        "url": "=https://YOUR_SANITY_PROJECT_ID.api.sanity.io/v2021-06-07/data/query/production?query=*[_id==\"{{ $json.query.sanityId }}\"][0]",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_SANITY_API_TOKEN" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-format-x",
+      "name": "Format X Post",
+      "type": "n8n-nodes-base.code",
+      "position": [640, 200],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const entry = $input.first().json.result;\nconst tags = (entry.tags || []).map(t => `#${t.replace(/\\s+/g,'')}`).join(' ');\nconst affiliateUrl = entry.affiliateUrl || entry.originalUrl || '';\n\nlet tweet = `${entry.title}\\n\\n${entry.blueprintNote}\\n\\n${tags} #UIX #ArchitecturalUX #WebDesign\\n\\n\\u2192 ${affiliateUrl}`;\n\n// Trim to 275 chars (leave room for Twitter t.co link)\nif (tweet.length > 275) {\n  const maxTitleLen = 275 - tags.length - affiliateUrl.length - 50;\n  const shortTitle = entry.title.length > maxTitleLen ? entry.title.substring(0, maxTitleLen) + '...' : entry.title;\n  tweet = `${shortTitle}\\n\\n${tags} #UIX #ArchitecturalUX\\n\\n\\u2192 ${affiliateUrl}`;\n}\n\nreturn [{ json: { ...entry, tweetText: tweet } }];"
+      }
+    },
+    {
+      "id": "node-upload-media-x",
+      "name": "Upload Media to X",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [860, 200],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/x-www-form-urlencoded" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "body": {
+          "parameters": [
+            { "name": "media_data", "value": "={{ Buffer.from(await $http.get($json.ogImage, {responseType:'arraybuffer'}).then(r=>r.data)).toString('base64') }}" }
+          ]
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "twitterOAuth1Api"
+      },
+      "credentials": { "twitterOAuth1Api": { "id": "REPLACE_WITH_TWITTER_CREDENTIAL_ID", "name": "Twitter UIX" } }
+    },
+    {
+      "id": "node-post-x",
+      "name": "Post to X",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1080, 200],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.twitter.com/2/tweets",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "text": "={{ $('Format X Post').first().json.tweetText }}",
+          "media": {
+            "media_ids": ["={{ $json.media_id_string }}"]
+          }
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "twitterOAuth1Api"
+      },
+      "credentials": { "twitterOAuth1Api": { "id": "REPLACE_WITH_TWITTER_CREDENTIAL_ID", "name": "Twitter UIX" } }
+    },
+    {
+      "id": "node-format-linkedin",
+      "name": "Format LinkedIn Post",
+      "type": "n8n-nodes-base.code",
+      "position": [640, 400],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const entry = $input.first().json.result;\nconst tags = (entry.tags || []).map(t => `#${t.replace(/\\s+/g,'')}`).join(' ');\nconst affiliateUrl = entry.affiliateUrl || entry.originalUrl || '';\n\nconst post = `${entry.title}\\n\\n${entry.editorialDesc}\\n\\nBlueprint note: ${entry.blueprintNote}\\n\\n${tags} #UIX #ArchitecturalUX #BauhausFusion #WebDesign #DesignInspiration\\n\\n\\u2192 ${affiliateUrl}`;\n\nreturn [{ json: { ...entry, linkedinText: post } }];"
+      }
+    },
+    {
+      "id": "node-get-linkedin-profile",
+      "name": "Get LinkedIn Profile ID",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [860, 400],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.linkedin.com/v2/me",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-post-linkedin",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1080, 400],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN" },
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-Restli-Protocol-Version", "value": "2.0.0" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "author": "=urn:li:person:{{ $json.id }}",
+          "lifecycleState": "PUBLISHED",
+          "specificContent": {
+            "com.linkedin.ugc.ShareContent": {
+              "shareCommentary": {
+                "text": "={{ $('Format LinkedIn Post').first().json.linkedinText }}"
+              },
+              "shareMediaCategory": "ARTICLE",
+              "media": [
+                {
+                  "status": "READY",
+                  "description": { "text": "={{ $('Format LinkedIn Post').first().json.editorialDesc }}" },
+                  "originalUrl": "={{ $('Format LinkedIn Post').first().json.affiliateUrl }}",
+                  "title": { "text": "={{ $('Format LinkedIn Post').first().json.title }}" }
+                }
+              ]
+            }
+          },
+          "visibility": {
+            "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+          }
+        }
+      }
+    },
+    {
+      "id": "node-merge-results",
+      "name": "Merge Social Results",
+      "type": "n8n-nodes-base.merge",
+      "position": [1300, 300],
+      "typeVersion": 3,
+      "parameters": { "mode": "append" }
+    },
+    {
+      "id": "node-update-sanity",
+      "name": "Update Sanity — Published",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1520, 300],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_SANITY_PROJECT_ID.api.sanity.io/v2021-06-07/data/mutate/production",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_SANITY_API_TOKEN" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "mutations": [
+            {
+              "patch": {
+                "id": "={{ $('Fetch Sanity Entry').first().json.result._id }}",
+                "set": {
+                  "status": "published",
+                  "publishedAt": "={{ new Date().toISOString() }}",
+                  "tweetUrl": "=https://twitter.com/i/web/status/{{ $('Post to X').first().json.data?.id || '' }}",
+                  "linkedinPostId": "={{ $('Post to LinkedIn').first().json.id || '' }}"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-confirm-email",
+      "name": "Send Confirmation Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [1740, 300],
+      "typeVersion": 2.1,
+      "parameters": {
+        "operation": "send",
+        "sendTo": "denswang@gmail.com",
+        "subject": "UIX Published \u2714 — {{ $('Fetch Sanity Entry').first().json.result.title }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html><html><body style=\"background:#0A0A0A;padding:32px;font-family:Arial;max-width:640px;margin:0 auto;\">\n<div style=\"border-bottom:2px solid #1D3557;padding-bottom:16px;margin-bottom:24px;\">\n  <span style=\"color:#F0F0F0;font-size:22px;font-weight:bold;\">UIX</span>\n  <span style=\"color:#3ECF8E;font-size:13px;margin-left:12px;\">\u2714 Published Successfully</span>\n</div>\n<div style=\"background:#111;border:1px solid #2A2A2A;border-radius:8px;padding:20px;\">\n  <h2 style=\"color:#F0F0F0;font-size:18px;margin:0 0 16px;\">{{ $('Fetch Sanity Entry').first().json.result.title }}</h2>\n  <p style=\"color:#888;font-size:14px;margin:0 0 20px;\">Your gallery entry is live and both social posts are published.</p>\n  <div style=\"border-top:1px solid #2A2A2A;padding-top:16px;\">\n    <p style=\"color:#555;font-size:13px;margin:0 0 8px;\"><span style=\"color:#888;\">X Post:</span> <a href=\"https://twitter.com/i/web/status/{{ $('Post to X').first().json.data?.id || '' }}\" style=\"color:#3D7EF5;\">View on X</a></p>\n    <p style=\"color:#555;font-size:13px;margin:0 0 8px;\"><span style=\"color:#888;\">Affiliate URL:</span> <a href=\"{{ $('Fetch Sanity Entry').first().json.result.affiliateUrl }}\" style=\"color:#3D7EF5;\">{{ $('Fetch Sanity Entry').first().json.result.affiliateUrl }}</a></p>\n  </div>\n</div>\n</body></html>"
+      },
+      "credentials": { "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail UIX" } }
+    }
+  ],
+  "connections": {
+    "Post Webhook": { "main": [[{ "node": "Fetch Sanity Entry", "type": "main", "index": 0 }, { "node": "Acknowledge Request", "type": "main", "index": 0 }]] },
+    "Fetch Sanity Entry": { "main": [[{ "node": "Format X Post", "type": "main", "index": 0 }, { "node": "Format LinkedIn Post", "type": "main", "index": 0 }]] },
+    "Format X Post": { "main": [[{ "node": "Upload Media to X", "type": "main", "index": 0 }]] },
+    "Upload Media to X": { "main": [[{ "node": "Post to X", "type": "main", "index": 0 }]] },
+    "Post to X": { "main": [[{ "node": "Merge Social Results", "type": "main", "index": 0 }]] },
+    "Format LinkedIn Post": { "main": [[{ "node": "Get LinkedIn Profile ID", "type": "main", "index": 0 }]] },
+    "Get LinkedIn Profile ID": { "main": [[{ "node": "Post to LinkedIn", "type": "main", "index": 0 }]] },
+    "Post to LinkedIn": { "main": [[{ "node": "Merge Social Results", "type": "main", "index": 1 }]] },
+    "Merge Social Results": { "main": [[{ "node": "Update Sanity — Published", "type": "main", "index": 0 }]] },
+    "Update Sanity — Published": { "main": [[{ "node": "Send Confirmation Email", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Jakarta" },
+  "versionId": "uix-wf3-v1"
+}

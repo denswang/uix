@@ -1,0 +1,218 @@
+{
+  "name": "UIX WF1 — Gallery Crawler + Email Alert",
+  "nodes": [
+    {
+      "id": "node-schedule",
+      "name": "Daily 9AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [200, 300],
+      "typeVersion": 1.1,
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * *" }]
+        }
+      }
+    },
+    {
+      "id": "node-read-seen",
+      "name": "Read Seen URLs",
+      "type": "n8n-nodes-base.readWriteFile",
+      "position": [420, 300],
+      "typeVersion": 1,
+      "parameters": {
+        "operation": "read",
+        "fileName": "/home/n8n/uix-seen-urls.json"
+      }
+    },
+    {
+      "id": "node-parse-seen",
+      "name": "Parse Seen JSON",
+      "type": "n8n-nodes-base.code",
+      "position": [640, 300],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.data;\nlet parsed;\ntry {\n  parsed = JSON.parse(raw);\n} catch(e) {\n  parsed = { seen: [] };\n}\nreturn [{ json: { seenUrls: parsed.seen || [] } }];"
+      }
+    },
+    {
+      "id": "node-siteinspire-rss",
+      "name": "Fetch Siteinspire RSS",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "position": [200, 500],
+      "typeVersion": 1,
+      "parameters": {
+        "url": "https://www.siteinspire.com/feed/",
+        "options": {}
+      }
+    },
+    {
+      "id": "node-format-siteinspire",
+      "name": "Format Siteinspire Items",
+      "type": "n8n-nodes-base.code",
+      "position": [420, 500],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({\n  json: {\n    title: item.json.title || '',\n    url: item.json.link || '',\n    thumbnail: item.json.enclosure?.url || item.json['media:content']?.url || '',\n    source: 'Siteinspire',\n    sourceColor: '#0F766E',\n    date: item.json.pubDate || new Date().toISOString()\n  }\n}));"
+      }
+    },
+    {
+      "id": "node-awwwards-fetch",
+      "name": "Fetch Awwwards",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [200, 660],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.awwwards.com/websites/",
+        "options": {
+          "response": { "response": { "responseFormat": "text" } }
+        }
+      }
+    },
+    {
+      "id": "node-parse-awwwards",
+      "name": "Parse Awwwards HTML",
+      "type": "n8n-nodes-base.html",
+      "position": [420, 660],
+      "typeVersion": 1.2,
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "sourceData": "json",
+        "dataPropertyName": "data",
+        "extractionValues": {
+          "values": [
+            { "key": "items", "cssSelector": ".website-award", "returnValue": "html", "returnArray": true }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-format-awwwards",
+      "name": "Format Awwwards Items",
+      "type": "n8n-nodes-base.code",
+      "position": [640, 660],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const items = $input.first().json.items || [];\nconst cheerio = require ? null : null;\nreturn items.slice(0, 10).map((html, i) => {\n  const titleMatch = html.match(/<h2[^>]*>([^<]+)<\\/h2>/);\n  const urlMatch = html.match(/href=\"(\\/websites\\/[^\"]+)\"/);\n  const imgMatch = html.match(/src=\"([^\"]+\\.(?:jpg|png|webp))\"/);\n  return {\n    json: {\n      title: titleMatch ? titleMatch[1].trim() : `Awwwards Site ${i+1}`,\n      url: urlMatch ? `https://www.awwwards.com${urlMatch[1]}` : 'https://www.awwwards.com/websites/',\n      thumbnail: imgMatch ? imgMatch[1] : '',\n      source: 'Awwwards',\n      sourceColor: '#B45309',\n      date: new Date().toISOString()\n    }\n  };\n});"
+      }
+    },
+    {
+      "id": "node-framer-fetch",
+      "name": "Fetch Framer Marketplace",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [200, 820],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.framer.com/marketplace/",
+        "options": {
+          "response": { "response": { "responseFormat": "text" } }
+        }
+      }
+    },
+    {
+      "id": "node-parse-framer",
+      "name": "Parse Framer Items",
+      "type": "n8n-nodes-base.code",
+      "position": [420, 820],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const html = $input.first().json.data || '';\nconst items = [];\nconst regex = /data-template-id=\"([^\"]+)\"[\\s\\S]*?alt=\"([^\"]+)\"[\\s\\S]*?src=\"([^\"]+framer\\.com[^\"]+)\"/g;\nlet match;\nwhile ((match = regex.exec(html)) !== null && items.length < 8) {\n  items.push({\n    json: {\n      title: match[2] || `Framer Template`,\n      url: `https://www.framer.com/marketplace/templates/${match[1]}/`,\n      thumbnail: match[3],\n      source: 'Framer',\n      sourceColor: '#1A56DB',\n      date: new Date().toISOString()\n    }\n  });\n}\nreturn items.length > 0 ? items : [{ json: { title: 'Check Framer Marketplace', url: 'https://www.framer.com/marketplace/', thumbnail: '', source: 'Framer', sourceColor: '#1A56DB', date: new Date().toISOString() } }];"
+      }
+    },
+    {
+      "id": "node-merge-all",
+      "name": "Merge All Sources",
+      "type": "n8n-nodes-base.merge",
+      "position": [860, 600],
+      "typeVersion": 3,
+      "parameters": {
+        "mode": "append"
+      }
+    },
+    {
+      "id": "node-filter-new",
+      "name": "Filter New Entries Only",
+      "type": "n8n-nodes-base.code",
+      "position": [1080, 600],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const seenUrls = $('Parse Seen JSON').first().json.seenUrls || [];\nconst allItems = $input.all();\nconst newItems = allItems.filter(item => {\n  const url = item.json.url || '';\n  return url && !seenUrls.includes(url);\n});\nif (newItems.length === 0) {\n  return [{ json: { empty: true, message: 'No new entries found today.' } }];\n}\nreturn newItems;"
+      }
+    },
+    {
+      "id": "node-check-empty",
+      "name": "Any New Entries?",
+      "type": "n8n-nodes-base.if",
+      "position": [1300, 600],
+      "typeVersion": 2,
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true },
+          "conditions": [
+            { "leftValue": "={{ $json.empty }}", "rightValue": true, "operator": { "type": "boolean", "operation": "notEquals" } }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "node-build-email",
+      "name": "Build Email HTML",
+      "type": "n8n-nodes-base.code",
+      "position": [1520, 480],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst webhookBase = 'http://YOUR_DROPLET_IP:5678/webhook/uix-approve';\nconst today = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });\n\nlet cards = items.map(item => {\n  const { title, url, thumbnail, source, sourceColor } = item.json;\n  const approveUrl = `${webhookBase}?url=${encodeURIComponent(url)}&source=${encodeURIComponent(source)}`;\n  const img = thumbnail ? `<img src=\"${thumbnail}\" style=\"width:100%;height:160px;object-fit:cover;border-radius:4px;\" />` : `<div style=\"width:100%;height:160px;background:#1A1A1A;border-radius:4px;display:flex;align-items:center;justify-content:center;\"><span style=\"color:#555;\">No preview</span></div>`;\n  return `\n  <div style=\"background:#111;border:1px solid #2A2A2A;border-radius:8px;padding:16px;margin-bottom:16px;\">\n    ${img}\n    <div style=\"margin-top:12px;\">\n      <span style=\"background:${sourceColor};color:#fff;font-size:11px;padding:2px 8px;border-radius:3px;font-family:monospace;\">${source.toUpperCase()}</span>\n      <h3 style=\"color:#F0F0F0;margin:8px 0 4px;font-family:Arial;font-size:16px;\">${title}</h3>\n      <a href=\"${url}\" style=\"color:#888;font-size:13px;\">${url}</a>\n    </div>\n    <a href=\"${approveUrl}\" style=\"display:inline-block;margin-top:12px;background:#FFFFFF;color:#000;padding:8px 20px;border-radius:4px;text-decoration:none;font-family:Arial;font-size:14px;font-weight:bold;\">APPROVE \u2192</a>\n  </div>`;\n}).join('');\n\nconst html = `\n<!DOCTYPE html><html><body style=\"background:#0A0A0A;padding:32px;font-family:Arial,sans-serif;max-width:640px;margin:0 auto;\">\n<div style=\"border-bottom:2px solid #1D3557;padding-bottom:16px;margin-bottom:24px;\">\n  <span style=\"color:#F0F0F0;font-size:24px;font-weight:bold;\">UIX</span>\n  <span style=\"color:#888;font-size:14px;margin-left:12px;\">Gallery Crawler \u2014 ${items.length} new site${items.length > 1 ? 's' : ''}</span>\n  <p style=\"color:#555;font-size:13px;margin:4px 0 0;\">${today}</p>\n</div>\n${cards}\n<p style=\"color:#333;font-size:12px;margin-top:24px;\">Click APPROVE on any site to trigger content generation and add it to your UIX gallery queue.</p>\n</body></html>`;\n\nreturn [{ json: { html, subject: `UIX Gallery Alert \u2014 ${items.length} new site${items.length>1?'s':''} found \u2014 ${today}` } }];"
+      }
+    },
+    {
+      "id": "node-send-email",
+      "name": "Send Email to Dennis",
+      "type": "n8n-nodes-base.gmail",
+      "position": [1740, 480],
+      "typeVersion": 2.1,
+      "parameters": {
+        "operation": "send",
+        "sendTo": "denswang@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}"
+      },
+      "credentials": { "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail UIX" } }
+    },
+    {
+      "id": "node-update-seen",
+      "name": "Update Seen URLs File",
+      "type": "n8n-nodes-base.code",
+      "position": [1520, 720],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const seenUrls = $('Parse Seen JSON').first().json.seenUrls || [];\nconst newUrls = $('Filter New Entries Only').all().map(i => i.json.url).filter(Boolean);\nconst merged = [...new Set([...seenUrls, ...newUrls])];\nconst fs = require('fs');\nfs.writeFileSync('/home/n8n/uix-seen-urls.json', JSON.stringify({ seen: merged }, null, 2));\nreturn [{ json: { updated: true, totalSeen: merged.length } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Daily 9AM Trigger": { "main": [[{ "node": "Read Seen URLs", "type": "main", "index": 0 }, { "node": "Fetch Siteinspire RSS", "type": "main", "index": 0 }, { "node": "Fetch Awwwards", "type": "main", "index": 0 }, { "node": "Fetch Framer Marketplace", "type": "main", "index": 0 }]] },
+    "Read Seen URLs": { "main": [[{ "node": "Parse Seen JSON", "type": "main", "index": 0 }]] },
+    "Fetch Siteinspire RSS": { "main": [[{ "node": "Format Siteinspire Items", "type": "main", "index": 0 }]] },
+    "Format Siteinspire Items": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 0 }]] },
+    "Fetch Awwwards": { "main": [[{ "node": "Parse Awwwards HTML", "type": "main", "index": 0 }]] },
+    "Parse Awwwards HTML": { "main": [[{ "node": "Format Awwwards Items", "type": "main", "index": 0 }]] },
+    "Format Awwwards Items": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 1 }]] },
+    "Fetch Framer Marketplace": { "main": [[{ "node": "Parse Framer Items", "type": "main", "index": 0 }]] },
+    "Parse Framer Items": { "main": [[{ "node": "Merge All Sources", "type": "main", "index": 2 }]] },
+    "Merge All Sources": { "main": [[{ "node": "Filter New Entries Only", "type": "main", "index": 0 }]] },
+    "Filter New Entries Only": { "main": [[{ "node": "Any New Entries?", "type": "main", "index": 0 }]] },
+    "Any New Entries?": {
+      "main": [
+        [{ "node": "Build Email HTML", "type": "main", "index": 0 }],
+        [{ "node": "Update Seen URLs File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Build Email HTML": { "main": [[{ "node": "Send Email to Dennis", "type": "main", "index": 0 }, { "node": "Update Seen URLs File", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Jakarta" },
+  "versionId": "uix-wf1-v1"
+}

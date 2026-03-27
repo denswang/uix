@@ -1,0 +1,106 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   UIX — BlueprintToggle.module.css
+   Phase 3 · Bauhaus Fusion · v1.0 · March 2026
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Toggle Button Shell ─────────────────────────────────────────────────── */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 36px;
+  padding: 0 var(--space-3);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background-color var(--transition-fast);
+  white-space: nowrap;
+  outline: none;
+  position: relative;
+}
+
+.toggle:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-divider);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ── Active State: Blueprint Mode ON ────────────────────────────────────── */
+.toggle[data-active="true"] {
+  color: var(--color-blueprint);
+  border-color: var(--color-blueprint);
+  background-color: rgba(61, 126, 245, 0.06);
+}
+
+.toggle[data-active="true"]:hover {
+  background-color: rgba(61, 126, 245, 0.12);
+  border-color: var(--color-blueprint);
+}
+
+/* ── Compact Variant (icon only) ─────────────────────────────────────────── */
+.toggle[data-compact="true"] {
+  width: 36px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* ── Icon Wrapper ────────────────────────────────────────────────────────── */
+.iconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.toggle[data-active="true"] .iconWrap {
+  transform: scale(1.1);
+}
+
+/* ── Label ───────────────────────────────────────────────────────────────── */
+.label {
+  line-height: 1;
+}
+
+/* ── Blueprint Mode Self-Annotation ─────────────────────────────────────── */
+.bpAnnotation {
+  display: none;
+  position: absolute;
+  top: -18px;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+[data-mode="blueprint"] .bpAnnotation {
+  display: block;
+}
+
+/* ── Blueprint Mode: border pulses slightly ──────────────────────────────── */
+[data-mode="blueprint"] .toggle[data-active="true"] {
+  border-color: var(--color-blueprint);
+  box-shadow: 0 0 0 1px rgba(61, 126, 245, 0.2);
+  animation: bpPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes bpPulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(61, 126, 245, 0.2); }
+  50%       { box-shadow: 0 0 0 3px rgba(61, 126, 245, 0.08); }
+}

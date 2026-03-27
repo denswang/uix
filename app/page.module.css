@@ -1,0 +1,115 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   UIX — page.module.css (Homepage)
+   Phase 4 · Bauhaus Fusion · v1.0
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Hero Header ─────────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  padding: var(--space-10) 0 var(--space-8);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0;
+}
+
+[data-mode="blueprint"] .hero {
+  border-bottom-color: rgba(61, 126, 245, 0.2);
+}
+
+/* ── Blueprint Hero Label ────────────────────────────────────────────────── */
+.bpHeroLabel {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  background-color: rgba(13, 26, 46, 0.85);
+  padding: 2px 8px;
+  pointer-events: none;
+}
+
+[data-mode="blueprint"] .bpHeroLabel {
+  display: block;
+}
+
+/* ── Hero Content ────────────────────────────────────────────────────────── */
+.heroContent {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ── Eyebrow ─────────────────────────────────────────────────────────────── */
+.heroEyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+[data-mode="blueprint"] .heroEyebrow {
+  color: var(--color-blueprint);
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.heroTitle {
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-h2), 5vw, var(--text-display));
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* ── Subtitle ────────────────────────────────────────────────────────────── */
+.heroSub {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 520px;
+}
+
+[data-mode="blueprint"] .heroSub {
+  opacity: 0.5;
+}
+
+/* ── Blueprint Hero Grid Annotation ─────────────────────────────────────── */
+.bpHeroGrid {
+  display: none;
+  position: absolute;
+  bottom: var(--space-3);
+  right: 0;
+  padding: var(--space-1) var(--space-3);
+  border-left: 2px solid rgba(61, 126, 245, 0.3);
+}
+
+[data-mode="blueprint"] .bpHeroGrid {
+  display: block;
+}
+
+/* ── Monospace utility ───────────────────────────────────────────────────── */
+.bpMono {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: var(--color-blueprint);
+  opacity: 0.7;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .hero {
+    padding: var(--space-8) 0 var(--space-6);
+  }
+
+  .bpHeroGrid {
+    display: none !important;
+  }
+}

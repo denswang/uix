@@ -1,0 +1,437 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   UIX — detail.module.css (Gallery Detail Page)
+   Phase 4 · Bauhaus Fusion · v1.0
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Page Wrapper ────────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-6) 0 var(--space-12);
+}
+
+/* ── Breadcrumb ──────────────────────────────────────────────────────────── */
+.breadcrumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+}
+
+.bpBreadcrumbLabel {
+  display: none;
+  position: absolute;
+  top: -16px;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  pointer-events: none;
+}
+
+[data-mode="blueprint"] .bpBreadcrumbLabel {
+  display: block;
+}
+
+.breadcrumbLink {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.breadcrumbLink:hover {
+  color: var(--color-text-primary);
+}
+
+[data-mode="blueprint"] .breadcrumbLink {
+  color: var(--color-blueprint);
+}
+
+.breadcrumbSep {
+  color: var(--color-text-tertiary);
+}
+
+.breadcrumbCurrent {
+  color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+/* ── Detail Header ───────────────────────────────────────────────────────── */
+.header {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+[data-mode="blueprint"] .header {
+  border-bottom-color: rgba(61, 126, 245, 0.2);
+}
+
+.bpHeaderLabel {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  pointer-events: none;
+}
+
+[data-mode="blueprint"] .bpHeaderLabel {
+  display: block;
+}
+
+/* ── Meta Row ────────────────────────────────────────────────────────────── */
+.metaRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ── Source Badge ────────────────────────────────────────────────────────── */
+.sourceBadge {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  color: var(--badge-color, var(--color-text-primary));
+  border: 1px solid var(--badge-color, var(--color-border));
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color var(--transition-fast);
+}
+
+[data-mode="blueprint"] .sourceBadge {
+  color: var(--color-blueprint);
+  border-color: var(--color-blueprint);
+}
+
+/* ── Playable Badge ──────────────────────────────────────────────────────── */
+.playableBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  font-weight: 500;
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: 3px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+[data-mode="blueprint"] .playableBadge {
+  color: var(--color-blueprint);
+  border-color: var(--color-blueprint);
+}
+
+/* ── Tags List ───────────────────────────────────────────────────────────── */
+.tagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tag {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+}
+
+[data-mode="blueprint"] .tag {
+  color: rgba(61, 126, 245, 0.5);
+  border-color: rgba(61, 126, 245, 0.2);
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.title {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(var(--text-h2), 4vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.bpTypeAnnotation {
+  display: none;
+  position: absolute;
+  top: -20px;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  pointer-events: none;
+}
+
+[data-mode="blueprint"] .bpTypeAnnotation {
+  display: block;
+}
+
+/* ── Blueprint Note ──────────────────────────────────────────────────────── */
+.bpNote {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  border-left: 2px solid var(--color-blueprint);
+  padding-left: var(--space-3);
+}
+
+[data-mode="blueprint"] .bpNote {
+  display: flex;
+}
+
+.bpNoteText {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: rgba(61, 126, 245, 0.8);
+  line-height: 1.5;
+}
+
+/* ── Monospace utility ───────────────────────────────────────────────────── */
+.bpMono {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: var(--color-blueprint);
+  opacity: 0.7;
+}
+
+/* ── Media Section ───────────────────────────────────────────────────────── */
+.mediaSection {
+  position: relative;
+}
+
+.bpMediaLabel {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  background-color: rgba(13, 26, 46, 0.88);
+  padding: 2px 8px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+[data-mode="blueprint"] .bpMediaLabel {
+  display: block;
+}
+
+/* ── Thumbnail (non-playable) ────────────────────────────────────────────── */
+.thumbnailWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background-color: var(--color-elevated);
+}
+
+.thumbnail {
+  object-fit: cover;
+  transition: opacity var(--transition-base);
+}
+
+[data-mode="blueprint"] .thumbnail {
+  opacity: 0.15;
+}
+
+/* ── Body Section (2-col) ────────────────────────────────────────────────── */
+.bodySection {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+/* ── Description Column ──────────────────────────────────────────────────── */
+.descriptionCol {
+  position: relative;
+}
+
+.bpBodyLabel {
+  display: none;
+  position: absolute;
+  top: -18px;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  pointer-events: none;
+}
+
+[data-mode="blueprint"] .bpBodyLabel {
+  display: block;
+}
+
+.description {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 640px;
+}
+
+[data-mode="blueprint"] .description {
+  opacity: 0.5;
+}
+
+/* ── CTA Column ──────────────────────────────────────────────────────────── */
+.ctaCol {
+  position: relative;
+}
+
+.bpCtaLabel {
+  display: none;
+  position: absolute;
+  top: -18px;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-blueprint);
+  pointer-events: none;
+}
+
+[data-mode="blueprint"] .bpCtaLabel {
+  display: block;
+}
+
+.ctaCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+[data-mode="blueprint"] .ctaCard {
+  border-color: rgba(61, 126, 245, 0.3);
+}
+
+/* ── Price Row ───────────────────────────────────────────────────────────── */
+.priceRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.priceLabel {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.price {
+  font-family: var(--font-display);
+  font-size: var(--text-h3);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+[data-mode="blueprint"] .price {
+  color: var(--color-blueprint);
+}
+
+/* ── CTA Button ──────────────────────────────────────────────────────────── */
+.ctaBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 var(--space-4);
+  background-color: var(--color-accent);
+  color: #000000;
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  transition:
+    background-color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.ctaBtn:hover {
+  background-color: var(--color-accent-dim);
+  transform: translateY(-1px);
+}
+
+[data-mode="blueprint"] .ctaBtn {
+  background-color: transparent;
+  color: var(--color-blueprint);
+  border-color: var(--color-blueprint);
+}
+
+.ctaArrow {
+  font-size: 1rem;
+}
+
+/* ── Back Link ───────────────────────────────────────────────────────────── */
+.backLink {
+  font-family: var(--font-mono);
+  font-size: var(--text-mono);
+  color: var(--color-text-tertiary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  text-align: center;
+}
+
+.backLink:hover {
+  color: var(--color-text-secondary);
+}
+
+[data-mode="blueprint"] .backLink {
+  color: rgba(61, 126, 245, 0.5);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .bodySection {
+    grid-template-columns: 1fr;
+  }
+
+  .ctaCard {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    gap: var(--space-6);
+  }
+
+  .breadcrumbCurrent {
+    max-width: 160px;
+  }
+}

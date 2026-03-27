@@ -1,0 +1,219 @@
+{
+  "name": "UIX WF2 — Approval + Content Generation",
+  "nodes": [
+    {
+      "id": "node-webhook",
+      "name": "Approval Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [200, 300],
+      "typeVersion": 2,
+      "parameters": {
+        "path": "uix-approve",
+        "httpMethod": "GET",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "uix-approve-webhook"
+    },
+    {
+      "id": "node-extract-params",
+      "name": "Extract URL + Source",
+      "type": "n8n-nodes-base.set",
+      "position": [420, 300],
+      "typeVersion": 3.3,
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            { "name": "approvedUrl", "type": "stringValue", "stringValue": "={{ $json.query.url }}" },
+            { "name": "source", "type": "stringValue", "stringValue": "={{ $json.query.source }}" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-scrape-meta",
+      "name": "Scrape Site Metadata",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [640, 300],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.approvedUrl }}",
+        "options": {
+          "response": { "response": { "responseFormat": "text" } },
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "node-parse-meta",
+      "name": "Parse OG Meta Tags",
+      "type": "n8n-nodes-base.code",
+      "position": [860, 300],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const html = $input.first().json.data || '';\nconst approvedUrl = $('Extract URL + Source').first().json.approvedUrl;\nconst source = $('Extract URL + Source').first().json.source;\n\nconst getMeta = (property) => {\n  const match = html.match(new RegExp(`<meta[^>]*(?:property|name)=[\"']${property}[\"'][^>]*content=[\"']([^\"']+)[\"']`, 'i')) ||\n                html.match(new RegExp(`<meta[^>]*content=[\"']([^\"']+)[\"'][^>]*(?:property|name)=[\"']${property}[\"']`, 'i'));\n  return match ? match[1] : '';\n};\n\nconst titleMatch = html.match(/<title[^>]*>([^<]+)<\\/title>/i);\n\nreturn [{ json: {\n  approvedUrl,\n  source,\n  ogTitle: getMeta('og:title') || (titleMatch ? titleMatch[1].trim() : 'Untitled'),\n  ogDescription: getMeta('og:description') || getMeta('description') || '',\n  ogImage: getMeta('og:image') || '',\n  ogUrl: getMeta('og:url') || approvedUrl\n}}];"
+      }
+    },
+    {
+      "id": "node-screenshot",
+      "name": "Capture Screenshot",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1080, 300],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.screenshotone.com/take",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "access_key", "value": "YOUR_SCREENSHOTONE_API_KEY" },
+            { "name": "url", "value": "={{ $json.approvedUrl }}" },
+            { "name": "viewport_width", "value": "1440" },
+            { "name": "viewport_height", "value": "900" },
+            { "name": "format", "value": "jpg" },
+            { "name": "image_quality", "value": "90" },
+            { "name": "full_page", "value": "false" }
+          ]
+        },
+        "options": {
+          "response": { "response": { "responseFormat": "file" } }
+        }
+      }
+    },
+    {
+      "id": "node-claude-generate",
+      "name": "Claude — Generate Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1300, 300],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-api-key", "value": "YOUR_ANTHROPIC_API_KEY" },
+            { "name": "anthropic-version", "value": "2023-06-01" },
+            { "name": "content-type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "model": "claude-sonnet-4-6",
+          "max_tokens": 1024,
+          "system": "You are the editorial voice of UIX (uix.cx), a Bauhaus Fusion architectural design gallery. Your curatorial standard: structural integrity first, surface second. Every description must reflect premium tech restraint — precise, unfussy, authoritative. Never use words like: stunning, beautiful, gorgeous, amazing, revolutionary, game-changing. Speak like an architect reviewing their own work.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Generate gallery content for this design site.\n\nTitle: {{ $('Parse OG Meta Tags').first().json.ogTitle }}\nDescription: {{ $('Parse OG Meta Tags').first().json.ogDescription }}\nURL: {{ $('Parse OG Meta Tags').first().json.approvedUrl }}\nSource: {{ $('Parse OG Meta Tags').first().json.source }}\n\nRespond ONLY with valid JSON (no markdown, no code blocks):\n{\n  \"galleryTitle\": \"max 8 words — architectural, precise\",\n  \"editorialDesc\": \"2-3 sentences in UIX voice — what makes the structure/logic strong\",\n  \"tags\": [\"Tag1\", \"Tag2\", \"Tag3\"],\n  \"blueprintNote\": \"1 sentence: the structural element that makes this worth Blueprint Mode analysis\",\n  \"affiliateCategory\": \"Framer|Webflow|Other\"\n}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-parse-claude",
+      "name": "Parse Claude Response",
+      "type": "n8n-nodes-base.code",
+      "position": [1520, 300],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst content = response.content?.[0]?.text || '{}';\nlet generated;\ntry {\n  generated = JSON.parse(content);\n} catch(e) {\n  const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);\n  generated = jsonMatch ? JSON.parse(jsonMatch[0]) : { galleryTitle: 'Untitled Design', editorialDesc: 'A notable addition to the architectural design canon.', tags: ['Design'], blueprintNote: 'Strong structural foundation.', affiliateCategory: 'Other' };\n}\nconst meta = $('Parse OG Meta Tags').first().json;\nreturn [{ json: { ...meta, ...generated } }];"
+      }
+    },
+    {
+      "id": "node-affiliate-link",
+      "name": "Generate Affiliate Link",
+      "type": "n8n-nodes-base.code",
+      "position": [1740, 300],
+      "typeVersion": 2,
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst YOUR_FRAMER_AFFILIATE_ID = 'YOUR_AFFILIATE_ID';\nlet affiliateUrl = data.approvedUrl;\n\nif (data.affiliateCategory === 'Framer' && data.approvedUrl.includes('framer.com')) {\n  const url = new URL(data.approvedUrl);\n  url.searchParams.set('via', YOUR_FRAMER_AFFILIATE_ID);\n  affiliateUrl = url.toString();\n} else {\n  const url = new URL(data.approvedUrl);\n  url.searchParams.set('utm_source', 'uix');\n  url.searchParams.set('utm_medium', 'gallery');\n  url.searchParams.set('utm_campaign', 'featured');\n  affiliateUrl = url.toString();\n}\n\nreturn [{ json: { ...data, affiliateUrl } }];"
+      }
+    },
+    {
+      "id": "node-sanity-create",
+      "name": "Create Sanity Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [1960, 300],
+      "typeVersion": 4.1,
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_SANITY_PROJECT_ID.api.sanity.io/v2021-06-07/data/mutate/production",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "Bearer YOUR_SANITY_API_TOKEN" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "mutations": [
+            {
+              "create": {
+                "_type": "galleryEntry",
+                "title": "={{ $json.galleryTitle }}",
+                "editorialDesc": "={{ $json.editorialDesc }}",
+                "tags": "={{ $json.tags }}",
+                "blueprintNote": "={{ $json.blueprintNote }}",
+                "originalUrl": "={{ $json.approvedUrl }}",
+                "affiliateUrl": "={{ $json.affiliateUrl }}",
+                "affiliateCategory": "={{ $json.affiliateCategory }}",
+                "source": "={{ $json.source }}",
+                "status": "draft",
+                "ogImage": "={{ $json.ogImage }}",
+                "dateAdded": "={{ new Date().toISOString() }}"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "node-preview-email",
+      "name": "Send Preview Email",
+      "type": "n8n-nodes-base.gmail",
+      "position": [2180, 300],
+      "typeVersion": 2.1,
+      "parameters": {
+        "operation": "send",
+        "sendTo": "denswang@gmail.com",
+        "subject": "UIX Content Ready — {{ $('Parse Claude Response').first().json.galleryTitle }}",
+        "emailType": "html",
+        "message": "=<!DOCTYPE html><html><body style=\"background:#0A0A0A;padding:32px;font-family:Arial;max-width:640px;margin:0 auto;\">\n<div style=\"border-bottom:2px solid #1D3557;padding-bottom:16px;margin-bottom:24px;\">\n  <span style=\"color:#F0F0F0;font-size:22px;font-weight:bold;\">UIX</span>\n  <span style=\"color:#888;font-size:13px;margin-left:12px;\">Content Generated \u2014 Review Before Publishing</span>\n</div>\n<div style=\"background:#111;border:1px solid #2A2A2A;border-radius:8px;padding:20px;\">\n  {{ $('Parse OG Meta Tags').first().json.ogImage ? `<img src=\"${$('Parse OG Meta Tags').first().json.ogImage}\" style=\"width:100%;border-radius:4px;margin-bottom:16px;\">` : '' }}\n  <h2 style=\"color:#F0F0F0;font-size:20px;margin:0 0 8px;\">{{ $('Parse Claude Response').first().json.galleryTitle }}</h2>\n  <p style=\"color:#888;font-size:14px;margin:0 0 12px;\">{{ $('Parse Claude Response').first().json.editorialDesc }}</p>\n  <p style=\"color:#555;font-size:13px;font-style:italic;margin:0 0 12px;border-left:3px solid #3D7EF5;padding-left:12px;\">Blueprint: {{ $('Parse Claude Response').first().json.blueprintNote }}</p>\n  <div style=\"margin-bottom:16px;\">{{ $('Parse Claude Response').first().json.tags.map(t => `<span style=\"background:#1A1A1A;color:#888;padding:2px 8px;border-radius:3px;font-size:12px;margin-right:6px;\">#${t}</span>`).join('') }}</div>\n  <p style=\"color:#555;font-size:12px;\">Affiliate URL: <a href=\"{{ $json.affiliateUrl }}\" style=\"color:#3D7EF5;\">{{ $json.affiliateUrl }}</a></p>\n</div>\n<div style=\"margin-top:20px;display:flex;gap:12px;\">\n  <a href=\"http://YOUR_DROPLET_IP:5678/webhook/uix-post?sanityId={{ $json.results?.[0]?.id || 'pending' }}\" style=\"display:inline-block;background:#FFFFFF;color:#000;padding:12px 24px;border-radius:4px;text-decoration:none;font-weight:bold;font-size:14px;\">POST TO SOCIAL NOW \u2192</a>\n  <a href=\"https://YOUR_SANITY_PROJECT_ID.sanity.studio\" style=\"display:inline-block;background:#1A1A1A;color:#888;padding:12px 24px;border-radius:4px;text-decoration:none;font-size:14px;border:1px solid #333;\">EDIT IN SANITY</a>\n</div>\n</body></html>"
+      },
+      "credentials": { "gmailOAuth2": { "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID", "name": "Gmail UIX" } }
+    },
+    {
+      "id": "node-webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [420, 500],
+      "typeVersion": 1.1,
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<html><body style=\"background:#0A0A0A;color:#F0F0F0;font-family:Arial;padding:40px;text-align:center;\"><h2>UIX</h2><p style=\"color:#888;\">Approved. Content generation in progress.<br>You will receive a preview email shortly.</p></body></html>",
+        "options": { "responseCode": 200, "responseHeaders": { "entries": [{ "name": "Content-Type", "value": "text/html" }] } }
+      }
+    }
+  ],
+  "connections": {
+    "Approval Webhook": { "main": [[{ "node": "Extract URL + Source", "type": "main", "index": 0 }, { "node": "Webhook Response", "type": "main", "index": 0 }]] },
+    "Extract URL + Source": { "main": [[{ "node": "Scrape Site Metadata", "type": "main", "index": 0 }]] },
+    "Scrape Site Metadata": { "main": [[{ "node": "Parse OG Meta Tags", "type": "main", "index": 0 }]] },
+    "Parse OG Meta Tags": { "main": [[{ "node": "Capture Screenshot", "type": "main", "index": 0 }]] },
+    "Capture Screenshot": { "main": [[{ "node": "Claude — Generate Content", "type": "main", "index": 0 }]] },
+    "Claude — Generate Content": { "main": [[{ "node": "Parse Claude Response", "type": "main", "index": 0 }]] },
+    "Parse Claude Response": { "main": [[{ "node": "Generate Affiliate Link", "type": "main", "index": 0 }]] },
+    "Generate Affiliate Link": { "main": [[{ "node": "Create Sanity Draft", "type": "main", "index": 0 }]] },
+    "Create Sanity Draft": { "main": [[{ "node": "Send Preview Email", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1", "timezone": "Asia/Jakarta" },
+  "versionId": "uix-wf2-v1"
+}

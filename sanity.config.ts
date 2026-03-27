@@ -2,8 +2,12 @@
  * UIX — Sanity Studio Config
  * Phase 5 · v1.0
  *
- * Embedded in Next.js App Router at /studio via next-sanity.
- * Project ID and dataset read from NEXT_PUBLIC_ env vars.
+ * Used by Sanity CLI to deploy the Studio to Sanity Cloud.
+ * Run from Dennis's Mac: npx sanity@latest deploy
+ * Studio will be live at: https://uix.sanity.studio
+ *
+ * The Next.js app uses @sanity/client directly — this config
+ * is NOT imported by the Next.js build.
  */
 
 import { defineConfig } from 'sanity';

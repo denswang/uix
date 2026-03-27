@@ -1,19 +1,13 @@
 /**
- * UIX — Sanity Studio Route
- * Phase 5 · v1.0
+ * UIX — Studio Redirect
  *
- * Embeds Sanity Studio at /studio using next-sanity.
- * Must be a client component — Studio renders in the browser.
- *
- * Access: https://new.uix.cx/studio
- * Requires a Sanity account with access to the UIX project.
+ * Sanity Studio is hosted at uix.sanity.studio (Sanity Cloud).
+ * This route redirects editors there instead of embedding the Studio
+ * in the Next.js app (which is too heavy for the 512MB Droplet).
  */
 
-'use client';
+import { redirect } from 'next/navigation';
 
-import { NextStudio } from 'next-sanity/studio';
-import config from '../../../sanity.config';
-
-export default function StudioPage() {
-  return <NextStudio config={config} />;
+export default function StudioRedirect() {
+  redirect('https://uix.sanity.studio');
 }
